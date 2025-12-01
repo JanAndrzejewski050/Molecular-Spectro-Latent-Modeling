@@ -68,6 +68,8 @@ def main():
     train_data, temp_data = train_test_split(data, test_size=0.2, random_state=args.seed, shuffle=True)
     val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=args.seed, shuffle=True)
 
+    print(f"Data shapes: Train {train_data.shape}, Val {val_data.shape}, Test {test_data.shape}")
+
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
 
