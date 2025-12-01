@@ -43,8 +43,8 @@ print(f"Using device: {device}")
 latent_sizes = [64, 128, 256, 512, 1024]
 betas = [1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
 
-batch_size = 256
-max_epochs = 10000
+batch_size = 1024
+max_epochs = 1000
 patience = 10
 
 lr_factor = 0.5
@@ -71,7 +71,7 @@ for latent_size in tqdm(latent_sizes, desc="Latent Sizes", position=0):
         best_val_loss_config = float('inf')
         epochs_no_improve = 0
 
-        for epoch in tqdm(range(1, max_epochs+1), desc="Epochs", position=2, leave=False):
+        for epoch in range(1, max_epochs+1):
             model.train()
             total_loss = 0
             val_loss = 0
