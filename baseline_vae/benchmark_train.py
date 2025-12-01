@@ -65,8 +65,8 @@ def main():
         padded_data[i, :len(seq)] = seq
 
     data = padded_data
-    train_data, temp_data = train_test_split(data, test_size=0.2, random_state=42, shuffle=True)
-    val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42, shuffle=True)
+    train_data, temp_data = train_test_split(data, test_size=0.2, random_state=args.seed, shuffle=True)
+    val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=args.seed, shuffle=True)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
@@ -112,9 +112,7 @@ def main():
         total_rec = 0
         total_kl = 0
         
-        print(f"Epoch {epoch:03d} Training...")
-        
-        for x in train_loader:
+        for x in tqdm(train_loader, desc=f"Epoch {epoch} Train", leave=False):
             x = x.to(device)
             logits, mu, logvar = model(x)
             loss, rec, kl = vae_loss(logits, x, mu, logvar, beta=args.beta)
@@ -127,6 +125,8 @@ def main():
             total_loss += loss.item()
             total_rec += rec.item()
             total_kl += kl.item()
+        
+        print(f"Epoch {epoch:03d} loss {loss.item():.4f}")
     
         avg_train_loss = total_loss / len(train_loader)
         avg_train_rec = total_rec / len(train_loader)
@@ -153,17 +153,17 @@ def main():
 
         print(f"Epoch {epoch:03d} | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
         
-        # Log to wandb
-        wandb.log({
-            "epoch": epoch,
-            "train_loss": avg_train_loss,
-            "train_rec_loss": avg_train_rec,
-            "train_kl_loss": avg_train_kl,
-            "val_loss": avg_val_loss,
-            "val_rec_loss": avg_val_rec,
-            "val_kl_loss": avg_val_kl,
-            "lr": optimizer.param_groups[0]['lr']
-        })
+        # # Log to wandb
+        # wandb.log({
+        #     "epoch": epoch,
+        #     "train_loss": avg_train_loss,
+        #     "train_rec_loss": avg_train_rec,
+        #     "train_kl_loss": avg_train_kl,
+        #     "val_loss": avg_val_loss,
+        #     "val_rec_loss": avg_val_rec,
+        #     "val_kl_loss": avg_val_kl,
+        #     "lr": optimizer.param_groups[0]['lr']
+        # })
 
         scheduler.step(avg_val_loss)
 
