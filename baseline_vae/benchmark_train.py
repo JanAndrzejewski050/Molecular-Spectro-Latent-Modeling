@@ -112,7 +112,9 @@ def main():
         total_rec = 0
         total_kl = 0
         
-        for x in tqdm(train_loader, desc=f"Epoch {epoch} Train", leave=False):
+        print(f"Epoch {epoch:03d} Training...")
+        
+        for x in train_loader:
             x = x.to(device)
             logits, mu, logvar = model(x)
             loss, rec, kl = vae_loss(logits, x, mu, logvar, beta=args.beta)
