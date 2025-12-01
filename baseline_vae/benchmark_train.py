@@ -18,6 +18,23 @@ def set_seed(seed):
     random.seed(seed)
     # torch.backends.cudnn.deterministic = True #! DON'T EVER SET THIS TO TRUE AS IT SLOWS DOWN TRAINING DRASTICALLY (>100x times)
 
+def calculate_metrics(logits, x, pad_id=0):
+    # logits: [B, T, V]
+    # x: [B, T]
+    preds = torch.argmax(logits, dim=-1)
+    
+    # Token accuracy (ignoring padding)
+    mask = (x != pad_id)
+    correct_tokens = (preds == x) & mask
+    token_acc = correct_tokens.sum().float() / (mask.sum().float() + 1e-8)
+    
+    # Sequence accuracy (ignoring padding)
+    # We consider a sequence correct if all non-pad tokens match
+    seq_correct = ((preds == x) | ~mask).all(dim=1)
+    seq_acc = seq_correct.float().mean()
+    
+    return token_acc, seq_acc
+
 def main():
     parser = argparse.ArgumentParser(description="Train Baseline VAE with specific hyperparameters")
     parser.add_argument("--latent_size", type=int, required=True, help="Latent dimension size")
@@ -98,7 +115,7 @@ def main():
         latent_size=args.latent_size
     ).to(device)
 
-    # wandb.watch(model, log="all", log_freq=100)
+    wandb.watch(model, log="all", log_freq=100)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, min_lr=1e-5, verbose=True)
@@ -115,6 +132,8 @@ def main():
         total_loss = 0
         total_rec = 0
         total_kl = 0
+        total_token_acc = 0
+        total_seq_acc = 0
         
         for x in tqdm(train_loader, desc=f"Epoch {epoch} Train", leave=False):
             x = x.to(device)
@@ -129,18 +148,26 @@ def main():
             total_loss += loss.item()
             total_rec += rec.item()
             total_kl += kl.item()
+
+            token_acc, seq_acc = calculate_metrics(logits, x)
+            total_token_acc += token_acc.item()
+            total_seq_acc += seq_acc.item()
         
-        print(f"Epoch {epoch:03d} loss {loss.item():.4f}")
+        # print(f"Epoch {epoch:03d} loss {loss.item():.4f}")
     
         avg_train_loss = total_loss / len(train_loader)
         avg_train_rec = total_rec / len(train_loader)
         avg_train_kl = total_kl / len(train_loader)
+        avg_train_token_acc = total_token_acc / len(train_loader)
+        avg_train_seq_acc = total_seq_acc / len(train_loader)
 
         # Validation
         model.eval()
         val_loss = 0
         val_rec = 0
         val_kl = 0
+        val_token_acc = 0
+        val_seq_acc = 0
         
         with torch.no_grad():
             for x in val_loader:
@@ -151,21 +178,33 @@ def main():
                 val_rec += rec.item()
                 val_kl += kl.item()
 
+                token_acc, seq_acc = calculate_metrics(logits, x)
+                val_token_acc += token_acc.item()
+                val_seq_acc += seq_acc.item()
+
         avg_val_loss = val_loss / len(val_loader)
         avg_val_rec = val_rec / len(val_loader)
         avg_val_kl = val_kl / len(val_loader)
+        avg_val_token_acc = val_token_acc / len(val_loader)
+        avg_val_seq_acc = val_seq_acc / len(val_loader)
 
-        print(f"Epoch {epoch:03d} | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
+        print(f"Epoch {epoch:03d} | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Train Seq Acc: {avg_train_seq_acc:.4f} | Val Seq Acc: {avg_val_seq_acc:.4f}")
         
         # Log to wandb
         wandb.log({
+            "loss/train_total": avg_train_loss,
+            "loss/train_recovery": avg_train_rec,
+            "loss/train_kl_divergence": avg_train_kl,
+            "loss/val_total": avg_val_loss,
+            "loss/val_recovery": avg_val_rec,
+            "loss/val_kl_divergence": avg_val_kl,
+            
+            "accuracy/train_token": avg_train_token_acc,
+            "accuracy/train_molecule": avg_train_seq_acc,
+            "accuracy/val_token": avg_val_token_acc,
+            "accuracy/val_molecule": avg_val_seq_acc,
+            
             "epoch": epoch,
-            "train_loss": avg_train_loss,
-            "train_rec_loss": avg_train_rec,
-            "train_kl_loss": avg_train_kl,
-            "val_loss": avg_val_loss,
-            "val_rec_loss": avg_val_rec,
-            "val_kl_loss": avg_val_kl,
             "lr": optimizer.param_groups[0]['lr']
         })
 
