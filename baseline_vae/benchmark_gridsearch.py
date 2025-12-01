@@ -6,7 +6,6 @@ import pandas as pd
 import selfies as sf
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-import argparse
 
 # Data prep
 df = pd.read_csv('./data/smiles_selfies_full.csv')

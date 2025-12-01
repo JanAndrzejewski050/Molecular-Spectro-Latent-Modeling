@@ -16,7 +16,7 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
-    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.deterministic = True #! DON'T EVER SET THIS TO TRUE AS IT SLOWS DOWN TRAINING DRASTICALLY (>100x times)
 
 def main():
     parser = argparse.ArgumentParser(description="Train Baseline VAE with specific hyperparameters")
@@ -74,8 +74,8 @@ def main():
     print(f"Using device: {device}")
 
     # Move data to device
-    # train_data = torch.tensor(train_data, dtype=torch.long).to(device)
-    # val_data = torch.tensor(val_data, dtype=torch.long).to(device)
+    train_data = torch.tensor(train_data, dtype=torch.long).to(device)
+    val_data = torch.tensor(val_data, dtype=torch.long).to(device)
     # test_data = torch.tensor(test_data, dtype=torch.long).to(device) # Not used in training loop
 
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=8)
@@ -121,12 +121,12 @@ def main():
             
             optimizer.zero_grad()
             loss.backward()
-            # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             
             total_loss += loss.item()
-            # total_rec += rec.item()
-            # total_kl += kl.item()
+            total_rec += rec.item()
+            total_kl += kl.item()
         
         print(f"Epoch {epoch:03d} loss {loss.item():.4f}")
     
