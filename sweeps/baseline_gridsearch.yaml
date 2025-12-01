@@ -16,4 +16,4 @@ parameters:
   lr:
     value: 0.001
   project_name:
-    value: "molecular-latent-space"
+    value: "baseline_tcn"
