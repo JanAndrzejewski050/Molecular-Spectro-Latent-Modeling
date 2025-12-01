@@ -38,6 +38,7 @@ val_data, test_data = train_test_split(data, test_size=0.5, random_state=42, shu
 
 # Grid Search
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f"Using device: {device}")
 
 latent_sizes = [64, 128, 256, 512, 1024]
 betas = [1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
@@ -56,11 +57,11 @@ best_model_state = None
 train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
 
-for latent_size in tqdm(latent_sizes, desc="Latent Sizes"):
+for latent_size in tqdm(latent_sizes, desc="Latent Sizes", position=0):
     embed_size = min(256, max(128, latent_size // 2))
     hidden_size = 2 * latent_size
 
-    for beta in tqdm(betas, desc="Betas"):
+    for beta in tqdm(betas, desc="Betas", position=1, leave=False):
         print(f"\n ----Training latent_dim={latent_size}, hidden={hidden_size}, embed={embed_size}, beta={beta}----")
 
         model = BaselineVAE(vocab_size=len(vocab), max_len=train_data.shape[-1], embed_size=embed_size, hidden_size=hidden_size, latent_size=latent_size).to(device)
@@ -70,7 +71,7 @@ for latent_size in tqdm(latent_sizes, desc="Latent Sizes"):
         best_val_loss_config = float('inf')
         epochs_no_improve = 0
 
-        for epoch in range(1, max_epochs+1):
+        for epoch in tqdm(range(1, max_epochs+1), desc="Epochs", position=2, leave=False):
             model.train()
             total_loss = 0
             val_loss = 0
