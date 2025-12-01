@@ -1,4 +1,5 @@
 program: baseline_vae/benchmark_train.py
+name: baseline_gridsearch
 method: grid
 metric:
   name: loss/val_total
