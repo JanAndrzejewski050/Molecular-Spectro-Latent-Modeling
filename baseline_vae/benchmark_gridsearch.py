@@ -1,7 +1,5 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 import numpy as np
 from baseline_model import BaselineVAE, vae_loss
 import pandas as pd
