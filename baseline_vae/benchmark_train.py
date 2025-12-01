@@ -46,7 +46,7 @@ def main():
     parser.add_argument("--hidden_size", type=int, default=None, help="Hidden size (default: 2*latent)")
     parser.add_argument("--embed_size", type=int, default=None, help="Embedding size (default: logic based on latent)")
     parser.add_argument("--data_path", type=str, default="./data/smiles_selfies_full.csv", help="Path to CSV data")
-    parser.add_argument("--project_name", type=str, default="baseline_tcn", help="WandB project name")
+    parser.add_argument("--project_name", type=str, default="baseline-tcn", help="WandB project name")
     parser.add_argument("--save_model", type=bool, default=True, help="Whether to save the trained model")
     
     args = parser.parse_args()

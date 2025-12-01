@@ -16,4 +16,4 @@ parameters:
   lr:
     value: 0.001
   project_name:
-    value: "baseline_tcn"
+    value: "baseline-tcn"
