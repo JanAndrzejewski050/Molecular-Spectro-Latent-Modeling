@@ -1,0 +1,19 @@
+program: baseline_vae/benchmark_train.py
+name: baseline_gridsearch
+method: grid
+metric:
+  name: loss/val_total
+  goal: minimize
+parameters:
+  latent_size:
+    values: [64, 128, 256, 512, 1024]
+  beta:
+    values: [0.1, 0.03, 0.01, 0.003, 0.001, 0.0003, 0.0001, 0.00003, 0.00001]
+  epochs:
+    value: 400
+  batch_size:
+    value: 1024
+  lr:
+    value: 0.001
+  project_name:
+    value: "baseline-tcn"
