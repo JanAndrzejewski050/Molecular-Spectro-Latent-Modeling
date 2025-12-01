@@ -5,7 +5,8 @@ from baseline_model import BaselineVAE, vae_loss
 import pandas as pd
 import selfies as sf
 from sklearn.model_selection import train_test_split
-from tqdm import tqdm, trange
+from tqdm import tqdm
+import argparse
 
 # Data prep
 df = pd.read_csv('../smiles_selfies_full.csv')
@@ -54,8 +55,14 @@ best_val_loss = float('inf')
 epochs_no_improve = 0
 best_model_state = None
 
-train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
+# move all data to device
+train_data = torch.tensor(train_data, dtype=torch.long).to(device)
+val_data = torch.tensor(val_data, dtype=torch.long).to(device)
+test_data = torch.tensor(test_data, dtype=torch.long).to(device)
+
+train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=8)
+val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False, num_workers=8)
+test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=8)
 
 for latent_size in tqdm(latent_sizes, desc="Latent Sizes", position=0):
     embed_size = min(256, max(128, latent_size // 2))
