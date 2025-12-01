@@ -28,7 +28,7 @@ def main():
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--hidden_size", type=int, default=None, help="Hidden size (default: 2*latent)")
     parser.add_argument("--embed_size", type=int, default=None, help="Embedding size (default: logic based on latent)")
-    parser.add_argument("--data_path", type=str, default="../smiles_selfies_full.csv", help="Path to CSV data")
+    parser.add_argument("--data_path", type=str, default="./data/smiles_selfies_full.csv", help="Path to CSV data")
     parser.add_argument("--project_name", type=str, default="molecular-vae", help="WandB project name")
     
     args = parser.parse_args()
