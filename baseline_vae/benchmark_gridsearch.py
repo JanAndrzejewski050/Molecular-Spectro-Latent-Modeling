@@ -34,7 +34,7 @@ for i, seq in enumerate(sequences):
 
 data = padded_data
 train_data, temp_data = train_test_split(data, test_size=0.2, random_state=42, shuffle=True)
-val_data, test_data = train_test_split(data, test_size=0.5, random_state=42, shuffle=True)
+val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42, shuffle=True)
 
 # Grid Search
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
