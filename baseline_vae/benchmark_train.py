@@ -78,8 +78,8 @@ def main():
     val_data = torch.tensor(val_data, dtype=torch.long).to(device)
     # test_data = torch.tensor(test_data, dtype=torch.long).to(device) # Not used in training loop
 
-    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=8)
-    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=8)
+    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
+    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False)
 
     # Model setup
     # Logic from benchmark_gridsearch.py
