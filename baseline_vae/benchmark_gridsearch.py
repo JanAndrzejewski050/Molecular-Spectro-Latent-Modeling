@@ -9,7 +9,7 @@ from tqdm import tqdm
 import argparse
 
 # Data prep
-df = pd.read_csv('../smiles_selfies_full.csv')
+df = pd.read_csv('./data/smiles_selfies_full.csv')
 df['tokens'] = df['selfies'].apply(lambda x: list(sf.split_selfies(x)))
 
 all_tokens =  [tok for seq in df['tokens'] for tok in seq]
