@@ -56,9 +56,9 @@ epochs_no_improve = 0
 best_model_state = None
 
 # move all data to device
-train_data = torch.tensor(train_data, dtype=torch.long).to(device)
-val_data = torch.tensor(val_data, dtype=torch.long).to(device)
-test_data = torch.tensor(test_data, dtype=torch.long).to(device)
+# train_data = torch.tensor(train_data, dtype=torch.long).to(device)
+# val_data = torch.tensor(val_data, dtype=torch.long).to(device)
+# test_data = torch.tensor(test_data, dtype=torch.long).to(device)
 
 train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=8)
 val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False, num_workers=8)
