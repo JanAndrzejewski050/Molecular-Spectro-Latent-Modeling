@@ -23,7 +23,7 @@ def main():
     parser.add_argument("--latent_size", type=int, required=True, help="Latent dimension size")
     parser.add_argument("--beta", type=float, required=True, help="Beta parameter for VAE loss")
     parser.add_argument("--batch_size", type=int, default=1024, help="Batch size")
-    parser.add_argument("--epochs", type=int, default=10, help="Number of epochs")
+    parser.add_argument("--epochs", type=int, default=400, help="Number of epochs")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--hidden_size", type=int, default=None, help="Hidden size (default: 2*latent)")
@@ -72,8 +72,8 @@ def main():
     print(f"Using device: {device}")
 
     # Move data to device
-    train_data = torch.tensor(train_data, dtype=torch.long).to(device)
-    val_data = torch.tensor(val_data, dtype=torch.long).to(device)
+    # train_data = torch.tensor(train_data, dtype=torch.long).to(device)
+    # val_data = torch.tensor(val_data, dtype=torch.long).to(device)
     # test_data = torch.tensor(test_data, dtype=torch.long).to(device) # Not used in training loop
 
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
