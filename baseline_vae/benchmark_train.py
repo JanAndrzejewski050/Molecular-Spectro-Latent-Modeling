@@ -76,8 +76,8 @@ def main():
     # val_data = torch.tensor(val_data, dtype=torch.long).to(device)
     # test_data = torch.tensor(test_data, dtype=torch.long).to(device) # Not used in training loop
 
-    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False)
+    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=8)
+    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=8)
 
     # Model setup
     # Logic from benchmark_gridsearch.py
@@ -94,7 +94,7 @@ def main():
         latent_size=args.latent_size
     ).to(device)
 
-    wandb.watch(model, log="all", log_freq=100)
+    # wandb.watch(model, log="all", log_freq=100)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, min_lr=1e-5, verbose=True)
