@@ -26,4 +26,4 @@ parameters:
   save_model:
     value: false
   project_name:
-    value: "molecular-latent-space"
+    value: "baseline_tcn"
