@@ -49,13 +49,15 @@ def main():
     SOS = "<SOS>"
     EOS = "<EOS>"
     vocab = [PAD, SOS, EOS] + vocab
+    #         0,   1,   2, ....
 
     tok2id = {tok: idx for idx, tok in enumerate(vocab)}
     
-    def tokens_to_ids(tokens, tok2id):
-        return np.array([tok2id[t] for t in tokens])
+    def full_molecule_tokens_to_ids(tokens, tok2id):
+        # Add SOS and EOS tokens
+        return np.array([1] + [tok2id[t] for t in tokens] + [2])
     
-    df['token_ids'] = df['tokens'].apply(lambda toks: tokens_to_ids(toks, tok2id))
+    df['token_ids'] = df['tokens'].apply(lambda toks: full_molecule_tokens_to_ids(toks, tok2id))
 
     sequences = df['token_ids'].tolist()
     max_len = max(len(seq) for seq in sequences)
