@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, TensorDataset
 import torch.functional as F
+import numpy as np
 
 class BaselineVAE(nn.Module):
     def __init__(self, vocab_size, max_len, embed_size=64, hidden_size=128, latent_size=64):
