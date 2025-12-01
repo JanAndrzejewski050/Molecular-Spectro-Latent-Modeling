@@ -47,6 +47,7 @@ def main():
     parser.add_argument("--embed_size", type=int, default=None, help="Embedding size (default: logic based on latent)")
     parser.add_argument("--data_path", type=str, default="./data/smiles_selfies_full.csv", help="Path to CSV data")
     parser.add_argument("--project_name", type=str, default="molecular-latent-space", help="WandB project name")
+    parser.add_argument("--save_model", type=bool, default=True, help="Whether to save the trained model")
     
     args = parser.parse_args()
 
@@ -213,14 +214,16 @@ def main():
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             epochs_no_improve = 0
-            torch.save({
+            data_to_save = {
                 'latent_size': args.latent_size,
                 'hidden_size': hidden_size,
                 'embed_size': embed_size,
                 'beta': args.beta,
-                'state_dict': model.state_dict(),
                 'val_loss': best_val_loss
-            }, f"trained_models/vae_lat{args.latent_size}_beta{args.beta}.pt")
+            }
+            if args.save_model:
+                data_to_save['state_dict'] = model.state_dict()
+            torch.save(data_to_save, f"trained_models/vae_lat{args.latent_size}_beta{args.beta}.pt")
         else:
             epochs_no_improve += 1
         
