@@ -45,7 +45,7 @@ latent_sizes = [64, 128, 256, 512, 1024]
 betas = [1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
 
 batch_size = 1024
-max_epochs = 1000
+max_epochs = 10
 patience = 10
 
 lr_factor = 0.5
