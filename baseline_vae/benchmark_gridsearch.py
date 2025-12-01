@@ -82,7 +82,7 @@ for latent_size in tqdm(latent_sizes, desc="Latent Sizes", position=0):
             model.train()
             total_loss = 0
             val_loss = 0
-            for x in train_loader:
+            for x in tqdm(train_loader, desc=f"Epoch {epoch} Train", leave=False):
                 x = x.to(device)
                 logits, mu, logvar = model(x)
                 loss, rec, kl = vae_loss(logits, x, mu, logvar, beta=beta)
