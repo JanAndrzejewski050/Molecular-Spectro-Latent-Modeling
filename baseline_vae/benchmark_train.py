@@ -157,17 +157,17 @@ def main():
 
         print(f"Epoch {epoch:03d} | Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
         
-        # # Log to wandb
-        # wandb.log({
-        #     "epoch": epoch,
-        #     "train_loss": avg_train_loss,
-        #     "train_rec_loss": avg_train_rec,
-        #     "train_kl_loss": avg_train_kl,
-        #     "val_loss": avg_val_loss,
-        #     "val_rec_loss": avg_val_rec,
-        #     "val_kl_loss": avg_val_kl,
-        #     "lr": optimizer.param_groups[0]['lr']
-        # })
+        # Log to wandb
+        wandb.log({
+            "epoch": epoch,
+            "train_loss": avg_train_loss,
+            "train_rec_loss": avg_train_rec,
+            "train_kl_loss": avg_train_kl,
+            "val_loss": avg_val_loss,
+            "val_rec_loss": avg_val_rec,
+            "val_kl_loss": avg_val_kl,
+            "lr": optimizer.param_groups[0]['lr']
+        })
 
         scheduler.step(avg_val_loss)
 
