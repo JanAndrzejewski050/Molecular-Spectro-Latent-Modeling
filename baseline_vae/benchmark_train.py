@@ -16,7 +16,7 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
-    torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.deterministic = True
 
 def main():
     parser = argparse.ArgumentParser(description="Train Baseline VAE with specific hyperparameters")
@@ -121,12 +121,12 @@ def main():
             
             optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             
             total_loss += loss.item()
-            total_rec += rec.item()
-            total_kl += kl.item()
+            # total_rec += rec.item()
+            # total_kl += kl.item()
         
         print(f"Epoch {epoch:03d} loss {loss.item():.4f}")
     
