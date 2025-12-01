@@ -54,7 +54,7 @@ def main():
     set_seed(args.seed)
 
     # Initialize wandb
-    wandb.init(entity='casus-mala', project=args.project_name, config=vars(args))
+    wandb.init(entity='molecular-latent-space', project=args.project_name, config=vars(args))
     
     # Data prep
     print("Loading data...")
