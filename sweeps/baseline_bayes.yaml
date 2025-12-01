@@ -23,5 +23,7 @@ parameters:
     values: [64, 128, 256, 512]
   epochs:
     value: 400
+  save_model:
+    value: false
   project_name:
     value: "molecular-latent-space"
