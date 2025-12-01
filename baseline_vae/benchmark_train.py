@@ -9,6 +9,14 @@ from tqdm import tqdm
 import argparse
 import wandb
 import os
+import random
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
 
 def main():
     parser = argparse.ArgumentParser(description="Train Baseline VAE with specific hyperparameters")
@@ -17,10 +25,15 @@ def main():
     parser.add_argument("--batch_size", type=int, default=1024, help="Batch size")
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--hidden_size", type=int, default=None, help="Hidden size (default: 2*latent)")
+    parser.add_argument("--embed_size", type=int, default=None, help="Embedding size (default: logic based on latent)")
     parser.add_argument("--data_path", type=str, default="../smiles_selfies_full.csv", help="Path to CSV data")
     parser.add_argument("--project_name", type=str, default="molecular-vae", help="WandB project name")
     
     args = parser.parse_args()
+
+    set_seed(args.seed)
 
     # Initialize wandb
     wandb.init(project=args.project_name, config=vars(args))
@@ -68,8 +81,8 @@ def main():
 
     # Model setup
     # Logic from benchmark_gridsearch.py
-    embed_size = min(256, max(128, args.latent_size // 2))
-    hidden_size = 2 * args.latent_size
+    embed_size = args.embed_size if args.embed_size else min(256, max(128, args.latent_size // 2))
+    hidden_size = args.hidden_size if args.hidden_size else 2 * args.latent_size
     
     print(f"Training with latent_dim={args.latent_size}, hidden={hidden_size}, embed={embed_size}, beta={args.beta}")
 
@@ -80,6 +93,8 @@ def main():
         hidden_size=hidden_size, 
         latent_size=args.latent_size
     ).to(device)
+
+    wandb.watch(model, log="all", log_freq=100)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, min_lr=1e-5, verbose=True)
@@ -104,6 +119,7 @@ def main():
             
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             
             total_loss += loss.item()
