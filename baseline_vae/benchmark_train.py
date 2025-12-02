@@ -42,6 +42,9 @@ def main():
     parser.add_argument("--batch_size", type=int, default=1024, help="Batch size")
     parser.add_argument("--epochs", type=int, default=400, help="Number of epochs")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
+    parser.add_argument("--lr_reduce_factor", type=float, default=0.5, help="Factor to reduce LR on plateau")
+    parser.add_argument("--lr_patience", type=int, default=4, help="Patience for learning rate reduction")
+    parser.add_argument("--early_stopping_patience", type=int, default=15, help="Patience for early stopping")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--hidden_size", type=int, default=None, help="Hidden size (default: 2*latent)")
     parser.add_argument("--embed_size", type=int, default=None, help="Embedding size (default: logic based on latent)")
@@ -119,10 +122,12 @@ def main():
     wandb.watch(model, log="all", log_freq=100)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, min_lr=1e-5, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', patience=args.lr_patience, min_lr=1e-7, verbose=True,
+        factor=args.lr_reduce_factor
+    )
 
     best_val_loss = float('inf')
-    patience = 10
     epochs_no_improve = 0
     
     # Create directory for models if it doesn't exist
@@ -226,8 +231,8 @@ def main():
             torch.save(data_to_save, f"trained_models/vae_lat{args.latent_size}_beta{args.beta}.pt")
         else:
             epochs_no_improve += 1
-        
-        if epochs_no_improve > patience:
+
+        if epochs_no_improve > args.early_stopping_patience:
             print(f"Early stopping after {epoch} epochs")
             break
             

@@ -1,0 +1,34 @@
+
+
+
+program: baseline_vae/benchmark_train.py
+name: baseline_bayes_search_long
+method: bayes
+metric:
+  name: loss/val_total
+  goal: minimize
+parameters:
+  latent_size:
+    values: [512, 1024, 2048, 4096, 8192]
+  beta:
+    distribution: log_uniform_values
+    min: 0.0001
+    max: 0.01
+  lr:
+    distribution: log_uniform_values
+    min: 0.00001
+    max: 0.01
+  batch_size:
+    values: [64, 128, 256, 512, 1024, 2048]
+  hidden_size:
+    values: [256, 512, 1024, 2048, 4096]
+  embed_size:
+    values: [64, 128, 256, 512]
+  epochs:
+    value: 600
+  early_stopping_patience:
+    value: 20
+  save_model:
+    value: true
+  project_name:
+    value: "baseline-tcn"
