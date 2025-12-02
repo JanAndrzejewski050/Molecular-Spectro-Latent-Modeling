@@ -9,7 +9,7 @@ import selfies as sf
 from sklearn.model_selection import train_test_split
 
 # Data prep
-df = pd.read_csv('../smiles_selfies_full.csv')
+df = pd.read_csv('smiles_selfies_full.csv')
 df['tokens'] = df['selfies'].apply(lambda x: list(sf.split_selfies(x)))
 
 all_tokens =  [tok for seq in df['tokens'] for tok in seq]
@@ -44,7 +44,7 @@ latent_sizes = [64, 128, 256, 512, 1024]
 betas = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
 
 batch_size = 1024
-max_epochs = 50
+max_epochs = 
 patience = 10
 
 lr_factor = 0.5
