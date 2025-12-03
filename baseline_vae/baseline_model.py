@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset
 import torch.nn.functional as F
 import numpy as np
 
@@ -77,7 +77,7 @@ class BaselineVAE(nn.Module):
         if x.dim() == 1:
             x = x.unsqueeze(0)
         loader = DataLoader(TensorDataset(x), batch_size=batch_size)
-        logits_list, mu_list, logvar_list = [], [], []
+        _, mu_list, logvar_list = [], [], []
         with torch.no_grad():
             for (bx,) in loader:
                 bx = bx.to(device)

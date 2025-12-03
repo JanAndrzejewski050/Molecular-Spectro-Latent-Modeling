@@ -1,15 +1,14 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 import numpy as np
 from baseline_model import BaselineVAE, vae_loss
 import pandas as pd
 import selfies as sf
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 
 # Data prep
-df = pd.read_csv('smiles_selfies_full.csv')
+df = pd.read_csv('./data/smiles_selfies_full.csv')
 df['tokens'] = df['selfies'].apply(lambda x: list(sf.split_selfies(x)))
 
 all_tokens =  [tok for seq in df['tokens'] for tok in seq]
@@ -35,16 +34,18 @@ for i, seq in enumerate(sequences):
 
 data = padded_data
 train_data, temp_data = train_test_split(data, test_size=0.2, random_state=42, shuffle=True)
-val_data, test_data = train_test_split(data, test_size=0.5, random_state=42, shuffle=True)
+val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42, shuffle=True)
 
+print(f"Data shapes: Train {train_data.shape}, Val {val_data.shape}, Test {test_data.shape}")
 # Grid Search
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f"Using device: {device}")
 
 latent_sizes = [64, 128, 256, 512, 1024]
-betas = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
+betas = [1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
 
 batch_size = 1024
-max_epochs = 
+max_epochs = 10
 patience = 10
 
 lr_factor = 0.5
@@ -54,14 +55,20 @@ best_val_loss = float('inf')
 epochs_no_improve = 0
 best_model_state = None
 
-train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
+# move all data to device
+# train_data = torch.tensor(train_data, dtype=torch.long).to(device)
+# val_data = torch.tensor(val_data, dtype=torch.long).to(device)
+# test_data = torch.tensor(test_data, dtype=torch.long).to(device)
 
-for latent_size in latent_sizes:
+train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=8)
+val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False, num_workers=8)
+test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=8)
+
+for latent_size in tqdm(latent_sizes, desc="Latent Sizes", position=0):
     embed_size = min(256, max(128, latent_size // 2))
     hidden_size = 2 * latent_size
 
-    for beta in betas:
+    for beta in tqdm(betas, desc="Betas", position=1, leave=False):
         print(f"\n ----Training latent_dim={latent_size}, hidden={hidden_size}, embed={embed_size}, beta={beta}----")
 
         model = BaselineVAE(vocab_size=len(vocab), max_len=train_data.shape[-1], embed_size=embed_size, hidden_size=hidden_size, latent_size=latent_size).to(device)
@@ -75,7 +82,7 @@ for latent_size in latent_sizes:
             model.train()
             total_loss = 0
             val_loss = 0
-            for x in train_loader:
+            for x in tqdm(train_loader, desc=f"Epoch {epoch} Train", leave=False):
                 x = x.to(device)
                 logits, mu, logvar = model(x)
                 loss, rec, kl = vae_loss(logits, x, mu, logvar, beta=beta)
