@@ -1,0 +1,142 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+import math
+
+
+class PositionalEmbedding(nn.Module):
+    def __init__(self, max_len, hidden_size):
+        super().__init__()
+        pe = torch.zeros(max_len, hidden_size)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, hidden_size, 2).float() * (-math.log(10000.0) / hidden_size))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        if x.dim() == 2:
+            B, T = x.shape
+        elif x.dim() == 3:
+            B, T, _ = x.shape
+        return self.pe[:T].unsqueeze(0)
+
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, hidden_size, num_heads):
+        super().__init__()
+        self.d = hidden_size
+        self.num_heads = num_heads
+        self.W_q = nn.Linear(hidden_size, num_heads * hidden_size, bias=False)
+        self.W_k = nn.Linear(hidden_size, num_heads * hidden_size, bias=False)
+        self.W_v = nn.Linear(hidden_size, num_heads * hidden_size, bias=False)
+        self.W_o = nn.Linear(num_heads * hidden_size, hidden_size, bias=False)
+        self.norm1 = nn.LayerNorm(hidden_size)
+        self.ff = nn.Sequential(
+            nn.Linear(hidden_size, 4*hidden_size),
+            nn.ReLU(),
+            nn.Linear(4*hidden_size, hidden_size)
+        )
+        self.norm2 = nn.LayerNorm(hidden_size)
+
+    def forward(self, x, mask=None):   # [B, T, H]
+        B, T, H = x.shape
+        Q = self.W_q(x)     # [B, T, num_heads * H]
+        K = self.W_k(x)
+        V = self.W_v(x)
+        Q = Q.view(B, self.num_heads, T, H) # [B, A, T, H]
+        K = K.view(B, self.num_heads, T, H)
+        V = V.view(B, self.num_heads, T, H)
+
+        attn_logits = torch.einsum('baih,bajh->baij', Q, K)    # [B, A, T, H] @ [B, A, H, T] = [B, A, T, T]
+
+        if mask is not None:
+            mask = mask.unsqueeze(0).unsqueeze(0)
+            attn_logits = attn_logits.masked_fill(mask, float('-inf'))
+
+        attn = F.softmax(attn_logits / (H ** 0.5), dim=-1)   
+        h = torch.einsum('baij,bajh->baih',attn, V)  # [B, A, T, H]
+        h = h.view(B, T, self.num_heads*H)  # [B, T, A*H]
+        h = self.W_o(h)     # [B, T, H]
+        
+        h = self.norm1(x + h)
+        h = self.norm2(h + self.ff(h))
+        return h
+
+
+class VaeTransformer(nn.Module):
+    def __init__(self, vocab_size, hidden_size, latent_size, max_len, attn_heads=10, mask_token_id=0, seed_size=5):
+        super().__init__()
+        # Encoder
+        self.hidden_size = hidden_size
+        self.embedding = nn.Embedding(vocab_size, hidden_size)
+        self.pos_encoder = PositionalEmbedding(max_len, hidden_size)
+        # Self Attention on embeddings
+        self.encoder = MultiHeadAttention(hidden_size, attn_heads)
+        # Attention Pooling matrix
+        self.W_pool = nn.Linear(hidden_size, hidden_size)
+        # vae heads
+        self.fc_mu = nn.Linear(hidden_size, latent_size)
+        self.fc_logvar = nn.Linear(hidden_size, latent_size)
+
+        # Decoder
+        self.max_len = max_len
+        self.seed_size = seed_size
+        self.fc_seed = nn.Linear(latent_size, seed_size * hidden_size)
+        # Self attention on masked sequences
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose1d(hidden_size, hidden_size, 4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose1d(hidden_size, hidden_size, 4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose1d(hidden_size, hidden_size, 4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose1d(hidden_size, hidden_size, 4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose1d(hidden_size, hidden_size, kernel_size=7, stride=1, padding=3)
+        )  
+        # output head
+        self.fc_output = nn.Linear(hidden_size, vocab_size)
+
+    def encode(self, x):  
+        h = self.embedding(x)    # [B, T, H]
+        pos_encoding = self.pos_encoder(x)
+        h += pos_encoding
+        h = self.encoder(h)
+        h = torch.mean(h, dim=-2)
+        mu = self.fc_mu(h)
+        logvar = self.fc_logvar(h)
+        return mu, logvar
+    
+    def decode(self, z):
+        B = z.size(0)
+        h = self.fc_seed(z)
+        h = h.view(B, self.hidden_size, self.seed_size)
+        h = self.decoder(h)            # [B, H, T]
+        h = h[:, :, :self.max_len]
+        logits = self.fc_output(h.transpose(1, 2))  # [B, T, vocab]
+        return logits
+
+    def forward(self, x):
+        mu, logvar = self.encode(x)
+        std = torch.exp(logvar)
+        eps = torch.randn_like(mu)
+        z = mu + std * eps
+        logits = self.decode(z)
+        return logits, mu, logvar
+
+
+def vae_loss(logits, x, mu, logvar, beta=0.01, pad_id=1):
+    B, T, V = logits.shape
+    logits_flat = logits.reshape((B*T, V))
+    targets_flat = x.reshape(B*T)
+
+    mask = (targets_flat != pad_id)
+    valid_logits = logits_flat[mask]
+    valid_targets = targets_flat[mask]
+
+    rec_loss = F.cross_entropy(valid_logits, valid_targets)
+    kl_loss = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+    loss = rec_loss + beta * kl_loss
+    return loss, rec_loss, kl_loss
