@@ -1,1 +1,23 @@
+# Systemowe śmieci
+.DS_Store
+.Rapp.history
+.ipynb_checkpoints/
+
+# Bezpieczeństwo
+.env
+
+# Dane (bardzo ważne - nie wysyłamy ich na GitHub)
+datasets/
+multimodal_spectroscopic_dataset/
+*.parquet
 *.csv
+
+# Wyniki analizy i obrazy
+images/
+*.png
+*.jpg
+*.pdf
+
+# Notatki i brudnopisy
+notatki/
+baseline_vae/latent_test.ipynb
